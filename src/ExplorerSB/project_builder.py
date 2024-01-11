@@ -36,7 +36,10 @@ import typing
 import zipfile
 
 # The following extensions are removed from the output directory
-EXCLUDED_EXTENSIONS = ["ode", "m", "vcml", "rdf", "owl", "txt", "sci", "zip", "json", "h5", "xml", "nml"]
+EXCLUDED_EXTENSIONS = ["ode", "m", "vcml", "rdf", "owl", "txt", "sci", "zip", "json", "h5", "nml"]
+
+# Notes:
+# Removed xml from excluded extensions. xml contains SBML so xml files are handled separately.
 
 
 class ProjectBuilder(ProjectBase):
@@ -77,8 +80,6 @@ class ProjectBuilder(ProjectBase):
         util.trace("Acquired fields from summary parser", 2)
         # Construct and populate the staging directory
         _ = self._makeStagingData()  # Download the output files
-        # TODO: Added SBML file here so that not eliminated in makeZipArchive with xml files
-        self._getSBMLFile()
         util.trace("Acquired staging data", 2)
         output_dir_path = self._downloadOutput()  # Download the output files
         if output_dir_path is None:
@@ -102,7 +103,8 @@ class ProjectBuilder(ProjectBase):
         if os.path.isdir(project_data_dir):
             shutil.rmtree(project_data_dir)
         shutil.copytree(self.getProjectDir(self.stage_dir), project_data_dir)
-        # Prune unnecessary files
+        # TODO: Prune XML files that are not SBML
+        self._pruneNonSbmlXml()
         _ = [self._removeFiles(project_data_dir, e) for e in EXCLUDED_EXTENSIONS]
         # Remove all subdirectories
         for ffile in os.listdir(project_data_dir):
@@ -204,6 +206,42 @@ class ProjectBuilder(ProjectBase):
         for ffile in ffiles:
             os.remove(os.path.join(directory, ffile))
 
+    def _pruneNonSbmlXml(self):
+        """
+        Removes all .xml files from the given directory that are not SBML files.
+
+        Args:
+            directory: directory to remove xml but retain sbml from
+        """
+        # get the directory (data_dir since the rest of the extensions are pruned out of here)
+        project_data_dir = self.getProjectDir(self.data_dir)
+
+        # gather only the xml files
+        ffiles = [f for f in os.listdir(project_data_dir) if f.endswith("xml")]
+
+        # if they are not SMBL, remove
+        for ffile in ffiles:
+
+            # form the path to that xml file
+            file_path = os.path.join(project_data_dir, ffile)
+            if not self._isSbmlFile(file_path):
+                os.remove(file_path)
+
+    def _isSbmlFile(self, path):
+        """
+        Checks if the given .xml file is SBML
+
+        Returns: T/F if it does/does not contain SBML
+        """
+        # TODO: What does "manifest" check for?
+        # splits = os.path.splitext(path)
+        # if (splits[1] == ".xml") and ("manifest" not in path):
+
+        with open(path, "r") as fd:
+            lines = fd.readlines()
+        model = "\n".join(lines)
+        return ("sbml" in model)
+
     def _copyUrlFile(self, file_url:str, dir_path:str, local_filename:str=None)->str:
         """
         Copies the file in the URL to the specified directory for the runid.
@@ -261,30 +299,6 @@ class ProjectBuilder(ProjectBase):
             return os.path.join(project_stage_dir, ffile)
         else:
             return None
-    
-    def _getSBMLFile(self):
-        # Assumptions: with a path to SBML file, can go to link and download
-        # See if there is an SBML file
-        paths = self.getFilePaths(self.stage_dir)
-        sbml_path = None
-        for path in paths:
-            splits = os.path.splitext(path)
-            if (splits[1] == ".xml") and ("manifest" not in path):
-                with open(path, "r") as fd:
-                    lines = fd.readlines()
-                model = "\n".join(lines)
-                if not "sbml" in model:
-                    continue
-                sbml_path = path
-                break
-        # Now copy the file at the url
-        if sbml_path is not None:
-            try:
-                project_dir = self.getProjectDir(self.stage_dir, is_create=True)
-                path = self._copyUrlFile(smbl_path, project_dir)
-            except:
-                pass
-
     
     def _makeReadableModel(self, is_write:bool=True, is_replace:bool=False)->str:
         """
