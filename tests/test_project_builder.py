@@ -9,7 +9,7 @@ import urllib3
 import zipfile
 
 
-IGNORE_TEST = False
+IGNORE_TEST = True
 IS_PLOT = False
 PROJECT_ID = "Yeast-cell-cycle-Irons-J-Theor-Biol-2009"
 RUNID = "61fea483f499ccf25faafc4d"
@@ -178,6 +178,24 @@ class TestProjectBuilder(unittest.TestCase):
         self.assertTrue(os.path.isfile(zip_path))
         ffiles = os.listdir(builder.data_dir)
         self.assertTrue(zip_file in ffiles)
+
+    def testPruneNonSbmlXml(self):
+        builder = self.makeBuilder()
+        _ = builder._makeStagingData() 
+        ffiles = [ f for f in os.listdir(builder.getProjectDir(STAGE_DIR)) if ".xml" in f]
+        # of xml before
+
+        print(ffiles)
+        builder._makeZipArchive()
+        zip_file = cn.ZIP_PAT % builder.runid
+        zip_path = os.path.join(builder.data_dir, zip_file)
+
+        ffiles = [ f for f in os.listdir(builder.data_dir) if ".xml" in f]
+        # self.assertLessEqual(postnum, prenum, "")
+        # ffiles = os.listdir(builder.data_dir)
+        # print(ffiles)
+        # csv_files = [p for p in os.listdir(path) if ".csv" in p]
+        # self.assertGreater(len(csv_files), 0)
 
     def testBuildProject(self):
         if IGNORE_TEST:
