@@ -48,6 +48,11 @@ class _Descriptor(object):
         new_labels = []
         for label in labels:
             new_label = label
+            # in case bytes are returned rather than str
+            try:
+                label = label.decode()
+            except (UnicodeDecodeError, AttributeError):
+                pass
             if "auto" in label:
                 pos = label.find("task")
                 if pos >= 0:
@@ -139,6 +144,10 @@ class H5Converter(object):
         """
         # Find the 'report' dataset to match plot dataset
         for name, descriptor in self.descriptor_dct.items():
+            try:
+                name = name.decode()
+            except (UnicodeDecodeError, AttributeError):
+                pass
             if "plot" in name:
                 plot_descriptor = descriptor
                 plot_df = plot_descriptor.df
@@ -176,6 +185,10 @@ class H5Converter(object):
     def _writeCsv(self):
         # Writes the dataframes to CSV files
         for name, df in self.result_dct.items():
+            try:
+                name = name.decode()
+            except (UnicodeDecodeError, AttributeError):
+                pass
             filename = name + ".csv"
             path = os.path.join(self.csv_dir, filename)
             df.to_csv(path, index=False)

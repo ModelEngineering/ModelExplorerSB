@@ -9,7 +9,7 @@ import urllib3
 import zipfile
 
 
-IGNORE_TEST = True
+IGNORE_TEST = False
 IS_PLOT = False
 PROJECT_ID = "Yeast-cell-cycle-Irons-J-Theor-Biol-2009"
 RUNID = "61fea483f499ccf25faafc4d"

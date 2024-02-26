@@ -1,5 +1,0 @@
-ant.zip filter=lfs diff=lfs merge=lfs -text
-cellml.zip filter=lfs diff=lfs merge=lfs -text
-context_files.zip filter=lfs diff=lfs merge=lfs -text
-csv.zip filter=lfs diff=lfs merge=lfs -text
-xml.zip filter=lfs diff=lfs merge=lfs -text

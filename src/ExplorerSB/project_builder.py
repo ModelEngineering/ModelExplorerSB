@@ -103,8 +103,9 @@ class ProjectBuilder(ProjectBase):
         if os.path.isdir(project_data_dir):
             shutil.rmtree(project_data_dir)
         shutil.copytree(self.getProjectDir(self.stage_dir), project_data_dir)
-        # TODO: Prune XML files that are not SBML
+        # Prune XML files that are not SBML
         self._pruneNonSbmlXml()
+        # Remove unnecessary files
         _ = [self._removeFiles(project_data_dir, e) for e in EXCLUDED_EXTENSIONS]
         # Remove all subdirectories
         for ffile in os.listdir(project_data_dir):
