@@ -51,7 +51,7 @@ def isSbmlFile(path):
 # in the public folder, it will not go and look for more.
 # Must be fixed so that we have a better way of knowing if the project has been completed processing
 def addToAll(checkIsDesired):
-    breakpoint()
+    # breakpoint()
     list_public = os.listdir(DATA_CACHE) # get list of all projects in the cache
     for proj in list_public:
         proj_path = os.path.join(DATA_CACHE, proj)
@@ -97,3 +97,9 @@ Testing
     1. Test basic where 1 file is transferred from staging to public
     2. Test where multiple files are valid and test that all are moved to public
 '''
+
+# Should add xml to 2e(BIOM), 21(Caravagna), NOT to 6e, e8(WholeCell), 4d (model.xml)
+# Works as expected
+
+# def removeFromAll(checkIsDesired):
+
