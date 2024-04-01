@@ -84,13 +84,36 @@ def addToAll(checkIsDesired):
                             source = stage_filepath
                             dest = proj_path
                             shutil.copy(source, dest)
-                            print("Copied file to proj")
+                            print('Copied file {} to {}'.format(file, dest))
             except FileNotFoundError:
                 print("Project not found in staging directory")
+
+# Loop through each project in the DATA_CACHE directory
+# Loop through each file in each project
+# If desired file in project:
+    # remove from project
+def removeFromAll(checkIsDesired):
+    # breakpoint()
+    list_public = os.listdir(DATA_CACHE) # get list of all projects in the cache
+    for proj in list_public:
+        proj_path = os.path.join(DATA_CACHE, proj)
+        # Loop through all files in the project
+        for file in os.listdir(proj_path):
+            proj_file_path = os.path.join(proj_path, file)
+            if proj_file_path.endswith(EXT):
+                # Check if the file is the desired file
+                if checkIsDesired(proj_file_path):
+                    # Double check it exists
+                    if os.path.exists(proj_file_path):
+                        # Remove it
+                        os.remove(proj_file_path)
+                        print('Deleted {} from {}'.format(file, proj_file_path))
+
              
 
 checkIsDesired = isSbmlFile # name of a custom function to detect a desired file type
-addToAll(checkIsDesired)
+# addToAll(checkIsDesired)
+removeFromAll(checkIsDesired)
 
 '''
 Testing
