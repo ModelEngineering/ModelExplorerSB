@@ -8,6 +8,7 @@ import datetime
 import argparse
 import csv
 import yaml
+import pandas as pd
 
 '''
 USAGE GUIDE:
@@ -85,6 +86,8 @@ def isCellMlFile(path):
 # 2. Only records a project as "finished" after all files in the staging directory have been reviewed.
 # - Interruption while looping through files? 
 # - Will lose info on already processed files BUT will always add all available.
+# *If the file has already been copied, will overwrite the old one
+# at most, duplicate work is the maximum number of files in a single directory
 def addToAll(checkIsDesired):
     # breakpoint()
     # try:
@@ -105,67 +108,56 @@ def addToAll(checkIsDesired):
     # changelog_file = open(ADD_HIST_PATH,"a")
     # 3. Open file for completed projects only
     # completed_projs = open(COMPLETED_PROJ, "a")
-    finished_projects = set()
+
+    # Populate set with completed projects parsed from history log
     with open(HIST_FILE, 'a', newline='') as changelog_file:
+        finished_projects = set()
         writer = csv.writer(changelog_file)
         if os.path.getsize(HIST_FILE) < 1:
             # Add headers to new file
-            fields = ['project_id', 'files_added', 'datetime', 'edit_action']
+            fields = ['project_id', 'file_added', 'datetime', 'edit_action']
             writer.writerow(fields)
+        else:
+            # Parse for completed projects
+            df = pd.read_csv(HIST_FILE)
+            completed_mask = df['edit_action'] == 'COMPLETE'
+            completed = df[completed_mask]
+            finished_projects = set(completed['project_id'])
 
         list_public = os.listdir(DATA_CACHE) # get list of all projects in the cache
         for proj in list_public:
             proj_path = os.path.join(DATA_CACHE, proj)
             if proj in finished_projects:
                 print('Project {} already processed for addition of file'.format(proj))
-            else:
-                # Need to go to the STAGE_DIR to see if it exists
-                print("Looking in stage_dir")
-                # Create path to proj in STAGE_DIR
-                stage_proj_path = os.path.join(STAGE_DIR, proj)
-                # List the files the project contains
-                try:
-                    list_proj_stagefiles = os.listdir(stage_proj_path)
-                    # added_files = []
-                    # Look for the desired extension
-                    for file in list_proj_stagefiles:
-                        # Only check the file if it has the proper extension
-                        if file.endswith(EXT):
-                            stage_filepath = os.path.join(stage_proj_path, file)
-                            if checkIsDesired(stage_filepath):
-                                # Add to the project if correct file
-                                source = stage_filepath
-                                dest = proj_path
-                                shutil.copy(source, dest)
+                continue
 
-                                # Record in csv
-                                writer.writerow([str(proj), str(file), str(datetime.datetime.now()), 'added'])
-                                # Add to array of added files for this project
-                                # added_files.append(file)
+            # Otherwise, need to go to the STAGE_DIR for that project
+            print("Looking in stage_dir")
+            stage_proj_path = os.path.join(STAGE_DIR, proj)
+            try:
+                list_proj_stagefiles = os.listdir(stage_proj_path)
+                # Look for the desired extension
+                for file in list_proj_stagefiles:
+                    stage_filepath = os.path.join(stage_proj_path, file)
+                    # Only check the file if it has the proper extension
+                    if file.endswith(EXT) and checkIsDesired(stage_filepath):
+                        # Add to the project if correct file
+                        source = stage_filepath
+                        dest = proj_path
+                        shutil.copy(source, dest)
 
-                                # Record modified project ID into changelog
-                                # TODO: ID is written as soon as 1 file is added
-                                # Change to make more robust when interrupted before all n SBML
-                                # files from staging could be transferred
-                                # changelog_file.write(str(proj) + '\n')
-                                print('Copied file {} to {}'.format(file, dest))
-                    
-                    # Finished processing all files in this project.
-                    # Record the modifications
-                    # result = []
-                    # result.append(str(proj))                    # PROJECT ID
-                    # result.append(str(added_files))             # LIST ADDED FILES
-                    # result.append(str(datetime.datetime.now())) # TIMESTAMP
-                    # result.append('added')                      # ACTION
-                    # result = ",".join(result)
+                        # Record in csv
+                        writer.writerow([str(proj), str(file), str(datetime.datetime.now()), 'added'])
+                        print('Copied file {} to {}'.format(file, dest))
 
-                    # # Record in 1. Completed Projects AND 2. Added Files
-                    # completed_projs.write(str(proj) + '\n')
-                    # changelog_file.write(str(result) + '\n')
-                except FileNotFoundError:
-                    print("Project not found in staging directory")
+                # Record project as completed
+                writer.writerow([str(proj), '', str(datetime.datetime.now()), 'COMPLETE'])
+                finished_projects.add(str(proj))
+            except FileNotFoundError:
+                print("Project not found in staging directory")
         
         # Close down both files
+        # with open will automatically close file
         # changelog_file.close()
         # completed_projs.close()
 
