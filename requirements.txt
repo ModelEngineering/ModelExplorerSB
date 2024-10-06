@@ -18,3 +18,4 @@ tellurium
 tempdir
 typing
 whoosh
+pyyaml

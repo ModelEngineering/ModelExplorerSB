@@ -144,3 +144,9 @@ dmypy.json
 
 # Virtual Environment
 /activate.sh
+
+# Local builds
+/staging
+
+# Local change history
+src/changelog
