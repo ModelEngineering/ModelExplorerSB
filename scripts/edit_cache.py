@@ -28,22 +28,6 @@ parser.add_argument("modify", help=" \"add\" to ADD from staging or \"remove\" t
 args = parser.parse_args()
 print(args.modify)
 
-# # Define paths and constants
-# SRC_PATH = os.path.join(cn.PROJECT_DIR, 'src')
-# UI_PATH = os.path.join(SRC_PATH, 'UI')
-# EXT = 'xml' # Define the extension of the file type to include/exclude
-# HIST_PATH = os.path.join(SRC_PATH, 'changelog')
-# # ADD_HIST_PATH = os.path.join(HIST_PATH, 'addedSBML.txt')
-# # COMPLETED_PROJ = os.path.join(HIST_PATH, 'completed_projs.txt')
-# SBML_HIST_PATH = os.path.join(HIST_PATH, 'sbml_log.csv')
-
-# # EDITABLE PATHS
-# # path to "public" folder whose files must be updated
-# DATA_CACHE = os.path.join(UI_PATH, 'test_public') # Ex. /Users/juliep/Documents/SauroLab/ExplorerSB/src/UI/test_public 
-# # path to dir which holds all available files for each project downloaded from BioSim
-# STAGE_DIR = cn.STAGE_DIR # is the same as in constants.py
-# # Ex. /Users/juliep/Documents/SauroLab/ExplorerSB/staging
-
 # Load in with YAML
 with open('scripts/config.yaml', 'r') as file:
     config = yaml.safe_load(file)
@@ -88,26 +72,13 @@ def isCellMlFile(path):
 # - Will lose info on already processed files BUT will always add all available.
 # *If the file has already been copied, will overwrite the old one
 # at most, duplicate work is the maximum number of files in a single directory
+# No duplicate files because will overwrite if a file already exists in the repo
+# to copy to
 def addToAll(checkIsDesired):
-    # breakpoint()
-    # try:
-    #     # 1. Get already modified project ID's into a set
-    #     done_file = open(COMPLETED_PROJ,"r")
-    #     finished_projects = done_file.readlines()
-    #     # strip off whitespace character
-    #     finished_projects = [k.strip() for k in finished_projects]
-    #     finished_projects = set(finished_projects)
-    #     done_file.close()
-    # except FileNotFoundError:
-    #     print('ERROR: Log of completed projects at {} does not exist'.format(COMPLETED_PROJ))
-    #     return
     
-    # 2. Open file for recording details about added files
+    # Open file for recording details about added files
     # 'a' for writing. "The data being written will be inserted at the end of the file. 
     # Creates a new file if it does not exist."
-    # changelog_file = open(ADD_HIST_PATH,"a")
-    # 3. Open file for completed projects only
-    # completed_projs = open(COMPLETED_PROJ, "a")
 
     # Populate set with completed projects parsed from history log
     with open(HIST_FILE, 'a', newline='') as changelog_file:
@@ -120,17 +91,16 @@ def addToAll(checkIsDesired):
         else:
             # Parse for completed projects
             df = pd.read_csv(HIST_FILE)
-            completed_mask = df['edit_action'] == 'COMPLETE'
+            completed_mask = df['edit_action'] == 'COMPLETE_ADD'
             completed = df[completed_mask]
             finished_projects = set(completed['project_id'])
 
         list_public = os.listdir(DATA_CACHE) # get list of all projects in the cache
         for proj in list_public:
-            proj_path = os.path.join(DATA_CACHE, proj)
             if proj in finished_projects:
                 print('Project {} already processed for addition of file'.format(proj))
                 continue
-
+            proj_path = os.path.join(DATA_CACHE, proj)
             # Otherwise, need to go to the STAGE_DIR for that project
             print("Looking in stage_dir")
             stage_proj_path = os.path.join(STAGE_DIR, proj)
@@ -151,39 +121,52 @@ def addToAll(checkIsDesired):
                         print('Copied file {} to {}'.format(file, dest))
 
                 # Record project as completed
-                writer.writerow([str(proj), '', str(datetime.datetime.now()), 'COMPLETE'])
+                writer.writerow([str(proj), '', str(datetime.datetime.now()), 'COMPLETE_ADD'])
                 finished_projects.add(str(proj))
             except FileNotFoundError:
                 print("Project not found in staging directory")
         
-        # Close down both files
         # with open will automatically close file
-        # changelog_file.close()
-        # completed_projs.close()
 
-# Loop through each project in the DATA_CACHE directory
-# Loop through each file in each project
-# If desired file in project:
-    # remove from project
+
 def removeFromAll(checkIsDesired):
-    # breakpoint()
-    list_public = os.listdir(DATA_CACHE) # get list of all projects in the cache
-    for proj in list_public:
-        proj_path = os.path.join(DATA_CACHE, proj)
-        # Loop through all files in the project
-        for file in os.listdir(proj_path):
-            proj_file_path = os.path.join(proj_path, file)
-            if proj_file_path.endswith(EXT):
-                # Check if the file is the desired file
-                if checkIsDesired(proj_file_path):
-                    # Double check it exists
-                    if os.path.exists(proj_file_path):
-                        # Remove it
-                        os.remove(proj_file_path)
-                        print('Deleted {} from {}'.format(file, proj_file_path))
+    # Gather completed projects
+    with open(HIST_FILE, 'a', newline='') as changelog_file:
+        finished_projects = set()
+        writer = csv.writer(changelog_file)
+        if os.path.getsize(HIST_FILE) < 1:
+            # Add headers to new file
+            fields = ['project_id', 'file_added', 'datetime', 'edit_action']
+            writer.writerow(fields)
+        else:
+            # Parse for completed projects
+            df = pd.read_csv(HIST_FILE)
+            completed_mask = df['edit_action'] == 'COMPLETE_REMOVE'
+            completed = df[completed_mask]
+            finished_projects = set(completed['project_id'])
 
+
+        list_public = os.listdir(DATA_CACHE)
+        # Loop through all projects
+        for proj in list_public:
+            if proj in finished_projects:
+                print('Project {} already processed for removal of files'.format(proj))
+                continue   
+            # Otherwise, loop through all files in project to see if remove
+            proj_path = os.path.join(DATA_CACHE, proj)
+            for file in os.listdir(proj_path):
+                proj_file_path = os.path.join(proj_path, file)
+                if (proj_file_path.endswith(EXT) and 
+                    checkIsDesired(proj_file_path) and
+                    os.path.exists(proj_file_path)
+                ):
+                    # Remove it
+                    os.remove(proj_file_path)
+                    writer.writerow([str(proj), str(file), str(datetime.datetime.now()), 'removed'])
+                    print('Deleted {} from {}'.format(file, proj_file_path))
+            writer.writerow([str(proj), '', str(datetime.datetime.now()), 'COMPLETE_REMOVE'])
+            finished_projects.add(str(proj))
              
-
 checkIsDesired = isSbmlFile # name of a custom function to detect a desired file type
 
 if args.modify == "add":
