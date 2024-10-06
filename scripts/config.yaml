@@ -1,0 +1,8 @@
+extension: 'xml'
+# src_path: '/Users/juliette/Documents/Research/Sauro Lab/ExplorerSB/src'
+# ui_path: '/Users/juliette/Documents/Research/Sauro Lab/ExplorerSB/src/UI'
+# history_path: '/Users/juliette/Documents/Research/Sauro Lab/ExplorerSB/src/changelog'
+history_file: '/Users/juliette/Documents/Research/Sauro Lab/ExplorerSB/src/changelog/sbml_log.csv'
+data_cache: '/Users/juliette/Documents/Research/Sauro Lab/ExplorerSB/src/UI/test_public'
+stage_dir: '/Users/juliette/Documents/Research/Sauro Lab/ExplorerSB/staging'
+# check_is_desired: isSBMLFile
