@@ -1,7 +1,7 @@
 """
 Touches all projects in the cache to add or exclude a specified file type.
 """
-import src.ExplorerSB.constants as cn
+# import src.ExplorerSB.constants as cn
 import os
 import shutil
 import datetime
@@ -74,6 +74,8 @@ def isCellMlFile(path):
 # at most, duplicate work is the maximum number of files in a single directory
 # No duplicate files because will overwrite if a file already exists in the repo
 # to copy to
+# Will create history file if one does not exist
+# Need to do some more tests
 def addToAll(checkIsDesired):
     
     # Open file for recording details about added files
@@ -175,11 +177,19 @@ if args.modify == "add":
 elif args.modify == "remove":
     removeFromAll(checkIsDesired)
 
+
+
+
+
+
+
+
+
+
+
+
 '''
 Testing
     1. Test basic where 1 file is transferred from staging to public
     2. Test where multiple files are valid and test that all are moved to public
 '''
-
-# Should add xml to 2e(BIOM), 21(Caravagna), NOT to 6e, e8(WholeCell), 4d (model.xml)
-# Works as expected
