@@ -39,6 +39,9 @@ This script provides functionality to add or remove a specified, custom file typ
 Every edit to the directory will be recorded in a specified "history log" file.
 This same log will be used to recognize which directories have already been processed. This allows for the operation to detect where it left off and pick up where it left off should the operation be interrupted or paused.
 
+## Demo
+![](https://github.com/ModelEngineering/ExplorerSB/blob/backend/scripts/directory_doctor_demo.gif)
+
 ## Usage Guide
 
 <!-- **1. The following must be configured before use:** -->
